@@ -16,6 +16,12 @@ On MacOS:
 	brew install pipenv
 ```
 
+3. Install xout
+
+```
+pip3 install . --user
+```
+
 
 
 ## Test with sample data
