@@ -6,6 +6,7 @@ setup(
     py_modules=['xout'],
     install_requires=[
         'docopt',
+        'tqdm',
     ],
     entry_points='''
         [console_scripts]

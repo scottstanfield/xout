@@ -15,11 +15,9 @@ Options:
 """
 
 import sys
-import pprint
 import signal
 import os
 from docopt import docopt
-from pprint import pprint
 from tqdm import tqdm
 
 from contextlib import contextmanager
@@ -104,6 +102,6 @@ if __name__ == '__main__':
 
     args = docopt(__doc__, version='1.0')
     if args['--verbose']:
-        pprint(args)
+        print(args)
     cli(args['<src>'], args['<dst>'], args['--verbose'], args['--quiet'])
 
