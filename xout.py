@@ -1,7 +1,34 @@
+"""
+Example program.
+
+Usage:
+    xout [--verbose | --quiet] <src> <dst>
+    xout --version
+    xout -h | --help
+
+Options:
+
+    -h, --help      Show this message
+    --version       Print the version
+    --quiet         No progress bar
+    --verbose       Add debug info
+"""
+
 import sys
-import click
+import pprint
 import signal
 import os
+from docopt import docopt
+from pprint import pprint
+from tqdm import tqdm
+
+from contextlib import contextmanager
+from contextlib import redirect_stdout
+
+@contextmanager
+def dummy(ob):
+    yield ob
+
 
 # These should be 1 based
 d = {
@@ -27,41 +54,56 @@ def sigpipe():
     # Reset Python's default SIGPIPE handler for Linux
     signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-@click.command()
-@click.argument('src', type=click.Path(exists=True, dir_okay=False, allow_dash=True))
-@click.argument('dst', type=click.File('w'), default='-')
-def cli(src, dst):
-    sigpipe()
-
+def cli(src, dst, verbose=False, quiet=False):
     is_file  = True if src != '-' else False
     filename = src if is_file else 'stdin'
     nbytes   = os.stat(src).st_size if is_file else -1
 
-    print(is_file, click.format_filename(src), file=sys.stderr)
-    print(nbytes, file=sys.stderr)
+    if (verbose):
+        print(nbytes, is_file, filename, file=sys.stderr)
 
-    with click.open_file(src, 'r') as lines:
-        with click.progressbar(length=nbytes, label=filename, file=sys.stderr) as bar:
-            for lineno, line in enumerate(lines):
-                # remove trailing newline
-                line = line.strip()
+    lines  = open(src, 'r') if is_file else sys.stdin
+    output = sys.stdout if dst == '-' else open(dst, 'w')
 
-                try:
-                    # Each record is delimited by a pipe |
-                    line_a = line.split('|')
+    with lines, output:
+        if nbytes > 0:
+            with tqdm(desc=filename, disable=quiet, total=nbytes, unit=" bytes", unit_scale=True) as bar:
+                for lineno, line in enumerate(lines):
+                    filter_line(line, output)
+                    bar.update(len(line))
+        else:
+            mm = enumerate(tqdm(lines, disable=quiet, desc=filename, unit=" lines", unit_scale=True))
+            for lineno, line in mm:
+                filter_line(line, output)
 
-                    # First field in each line is the 2 digit "record type"
-                    record_type = int(line_a[0])
 
-                    if record_type in d:
-                        pii_a = [hasher(f) if ind+1 in d[record_type] else f for ind, f in enumerate(line_a)]
-                        pii   = '|'.join(pii_a)
-                        print(pii, file=dst)
-                    else:
-                        print(pii, file=dst)
-                except:
-                    # if the line isn't in the expected form, pass it on unchanged
-                    print(line, file=dst)
+def filter_line(line, output):
+    # remove trailing newline
+    line = line.strip()
 
-                bar.update(len(line))
+    try:
+        # Each record is delimited by a pipe |
+        line_a = line.split('|')
+
+        # First field in each line is the 2 digit "record type"
+        record_type = int(line_a[0])
+
+        if record_type in d:
+            pii_a = [hasher(f) if ind+1 in d[record_type] else f for ind, f in enumerate(line_a)]
+            pii   = '|'.join(pii_a)
+            print(pii, file=output)
+        else:
+            print(pii, file=output)
+    except:
+        # if the line isn't in the expected form, pass it on unchanged
+        print(line, file=output)
+
+
+if __name__ == '__main__':
+    sigpipe()
+
+    args = docopt(__doc__, version='1.0')
+    if args['--verbose']:
+        pprint(args)
+    cli(args['<src>'], args['<dst>'], args['--verbose'], args['--quiet'])
 

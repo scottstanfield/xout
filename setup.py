@@ -5,7 +5,7 @@ setup(
     version='0.1',
     py_modules=['xout'],
     install_requires=[
-        'Click',
+        'docopt',
     ],
     entry_points='''
         [console_scripts]
