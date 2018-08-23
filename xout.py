@@ -60,19 +60,19 @@ def cli(src, dst, verbose=False, quiet=False):
     if (verbose):
         print(nbytes, is_file, filename, file=sys.stderr)
 
-    lines  = open(src, 'r') if is_file else sys.stdin
-    output = sys.stdout if dst == '-' else open(dst, 'w')
+    source = open(src, 'r') if is_file else sys.stdin
+    dest   = sys.stdout if dst == '-' else open(dst, 'w')
 
-    with lines, output:
+    with source, dest:
         if nbytes > 0:
             with tqdm(desc=filename, disable=quiet, total=nbytes, unit=" bytes", unit_scale=True) as bar:
-                for lineno, line in enumerate(lines):
-                    filter_line(line, output)
+                for lineno, line in enumerate(source):
+                    filter_line(line, dest)
                     bar.update(len(line))
         else:
             mm = enumerate(tqdm(lines, disable=quiet, desc=filename, unit=" lines", unit_scale=True))
             for lineno, line in mm:
-                filter_line(line, output)
+                filter_line(line, dest)
 
 
 def filter_line(line, output):
