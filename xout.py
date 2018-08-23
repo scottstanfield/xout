@@ -96,12 +96,14 @@ def filter_line(line, output):
         # if the line isn't in the expected form, pass it on unchanged
         print(line, file=output)
 
-
-if __name__ == '__main__':
+def main():
     sigpipe()
 
     args = docopt(__doc__, version='1.0')
     if args['--verbose']:
         print(args)
     cli(args['<src>'], args['<dst>'], args['--verbose'], args['--quiet'])
+
+if __name__ == '__main__':
+    main()
 
