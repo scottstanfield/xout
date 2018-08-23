@@ -57,7 +57,13 @@ def cli(src, dst, verbose=False, quiet=False):
     filename = src if is_file else 'stdin'
     nbytes   = os.stat(src).st_size if is_file else -1
 
+    # If destination is a folder instead of a directory
+    # then amend path with filename.bak
+    if os.path.isdir(dst):
+        dst = os.path.join(dst, os.path.basename(src) + '.bak')
+
     if (verbose):
+        print(src, dst, file=sys.stderr)
         print(nbytes, is_file, filename, file=sys.stderr)
 
     source = open(src, 'r') if is_file else sys.stdin
